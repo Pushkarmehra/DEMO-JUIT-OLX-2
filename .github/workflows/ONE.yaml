@@ -1,0 +1,12 @@
+steps:
+  - name: Use token
+    run: |
+      echo "Token is available"
+    env:
+      TOKEN: ${{ secrets.TOKEN }}
+  
+  - name: API call example
+    run: |
+      curl -H "Authorization: Bearer $TOKEN" https://api.example.com
+    env:
+      TOKEN: ${{ secrets.TOKEN }}
