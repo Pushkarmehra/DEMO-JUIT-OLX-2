@@ -1,0 +1,46 @@
+[
+  {
+    "id": 1754211902954,
+    "name": "Test 4",
+    "price": 199,
+    "seller": "pushkar",
+    "whatsapp": "919317299909",
+    "condition": "Brand New",
+    "description": "ji",
+    "imagePath": "https://raw.githubusercontent.com/Pushkarmehra/DEMO-JUIT-OLX-2/main/images/product_1754211900962.jpg",
+    "dateAdded": "2025-08-03T09:05:02.954Z"
+  },
+  {
+    "id": 1,
+    "name": "Gaming Laptop RTX 3060",
+    "price": 85000,
+    "seller": "Alex Kumar",
+    "whatsapp": "919876543210",
+    "condition": "Like New",
+    "description": "High-performance gaming laptop with RTX 3060 graphics card, perfect for gaming and development work.",
+    "imagePath": "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=500&h=300&fit=crop",
+    "dateAdded": "2025-08-03T09:04:46.013Z"
+  },
+  {
+    "id": 2,
+    "name": "Study Table with Storage",
+    "price": 4500,
+    "seller": "Priya Singh",
+    "whatsapp": "919876543211",
+    "condition": "Good",
+    "description": "Wooden study desk with multiple drawers, perfect for dorm rooms and study spaces.",
+    "imagePath": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500&h=300&fit=crop",
+    "dateAdded": "2025-08-03T09:04:46.013Z"
+  },
+  {
+    "id": 3,
+    "name": "Mountain Bike Trek",
+    "price": 25000,
+    "seller": "Rahul Sharma",
+    "whatsapp": "919876543212",
+    "condition": "Excellent",
+    "description": "Trek mountain bike in excellent condition, perfect for campus rides and weekend adventures.",
+    "imagePath": "https://images.unsplash.com/photo-1544191696-15693072ce6b?w=500&h=300&fit=crop",
+    "dateAdded": "2025-08-03T09:04:46.013Z"
+  }
+]
