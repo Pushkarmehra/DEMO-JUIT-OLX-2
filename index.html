@@ -166,9 +166,25 @@
             border-color: #3b82f6;
             background-color: rgba(59, 130, 246, 0.2);
         }
+
+        .token-setup-banner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            animation: pulse 2s infinite;
+        }
     </style>
 </head>
 <body class="dark bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 min-h-screen text-white">
+    <!-- Token Setup Banner -->
+    <div id="tokenBanner" class="token-setup-banner text-white p-4 text-center hidden">
+        <div class="max-w-4xl mx-auto">
+            <p class="font-semibold mb-2">⚠️ GitHub Token Required for Full Functionality</p>
+            <p class="text-sm">Products will be stored locally. Set up GitHub integration for persistence.</p>
+            <button onclick="juitApp.showTokenSetup()" class="mt-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm transition-colors">
+                Setup GitHub Token
+            </button>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="sticky top-0 z-50 glass bg-dark-800/20 border-b border-dark-700/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -258,6 +274,71 @@
             </button>
         </div>
     </main>
+
+    <!-- Token Setup Modal -->
+    <div id="tokenModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-4">
+        <div class="modal-content glass bg-dark-800/90 rounded-2xl w-full max-w-2xl border border-dark-600/50">
+            <div class="flex justify-between items-center p-6 border-b border-dark-600/50">
+                <h3 class="text-2xl font-bold text-white">GitHub Token Setup</h3>
+                <button onclick="juitApp.closeTokenSetup()" class="text-dark-400 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold mb-3 text-yellow-400">📋 Setup Instructions:</h4>
+                    <ol class="list-decimal list-inside space-y-2 text-sm text-dark-300">
+                        <li>Go to <a href="https://github.com/settings/tokens" target="_blank" class="text-blue-400 hover:underline">GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)</a></li>
+                        <li>Click "Generate new token (classic)"</li>
+                        <li>Set expiration and select these scopes: <code class="bg-dark-700 px-2 py-1 rounded">repo</code></li>
+                        <li>Copy the generated token and paste it below</li>
+                        <li>Update your GitHub username and repository name</li>
+                    </ol>
+                </div>
+                
+                <form id="tokenForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-dark-300 mb-2">GitHub Token</label>
+                        <input type="password" 
+                               id="githubToken" 
+                               placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                               class="w-full px-4 py-3 bg-dark-700/50 border border-dark-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-white">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-300 mb-2">GitHub Username</label>
+                            <input type="text" 
+                                   id="githubUsername" 
+                                   placeholder="your-username"
+                                   class="w-full px-4 py-3 bg-dark-700/50 border border-dark-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-300 mb-2">Repository Name</label>
+                            <input type="text" 
+                                   id="githubRepo" 
+                                   placeholder="juit-olx"
+                                   class="w-full px-4 py-3 bg-dark-700/50 border border-dark-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-white">
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4 pt-4">
+                        <button type="button" 
+                                onclick="juitApp.closeTokenSetup()"
+                                class="flex-1 px-6 py-3 bg-dark-600 hover:bg-dark-500 text-white rounded-lg transition-colors duration-200">
+                            Skip (Local Only)
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+                            Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Sell Modal -->
     <div id="sellModal" class="fixed inset-0 z-50 modal-overlay hidden flex items-center justify-center p-4">
@@ -396,12 +477,12 @@
     <script>
         class JUITOLXApp {
             constructor() {
-                const token=process.env.TOKEN, 
                 this.products = [];
                 this.filteredProducts = [];
                 this.githubConfig = {
-                    owner: 'Pushkarmehra', // ⚠️ CHANGE THIS to your GitHub username
-                    repo: 'DEMO-JUIT-OLX-2', // ⚠️ CHANGE THIS to your repository name
+                    token: null,
+                    owner: 'Pushkarmehra', // Default fallback
+                    repo: 'DEMO-JUIT-OLX-2', // Default fallback
                     branch: 'main'
                 };
                 
@@ -410,10 +491,50 @@
             }
 
             async init() {
+                this.loadStoredConfig();
                 this.setupEventListeners();
                 this.setupAnimations();
                 this.setupImageUpload();
                 await this.loadProducts();
+                this.checkTokenStatus();
+            }
+
+            loadStoredConfig() {
+                // Load configuration from localStorage
+                const storedConfig = localStorage.getItem('juitOLXConfig');
+                if (storedConfig) {
+                    try {
+                        const config = JSON.parse(storedConfig);
+                        this.githubConfig = { ...this.githubConfig, ...config };
+                    } catch (error) {
+                        console.error('Error loading stored config:', error);
+                    }
+                }
+            }
+
+            saveConfig() {
+                // Save configuration to localStorage
+                localStorage.setItem('juitOLXConfig', JSON.stringify(this.githubConfig));
+            }
+
+            checkTokenStatus() {
+                // Show banner if no token is configured
+                if (!this.githubConfig.token || this.githubConfig.token === 'YOUR_GITHUB_TOKEN') {
+                    document.getElementById('tokenBanner').classList.remove('hidden');
+                }
+            }
+
+            showTokenSetup() {
+                // Pre-fill current values
+                document.getElementById('githubUsername').value = this.githubConfig.owner || '';
+                document.getElementById('githubRepo').value = this.githubConfig.repo || '';
+                document.getElementById('tokenModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeTokenSetup() {
+                document.getElementById('tokenModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
             }
 
             setupEventListeners() {
@@ -444,12 +565,58 @@
                     this.handleFormSubmission();
                 });
 
+                // Token form submission
+                document.getElementById('tokenForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleTokenSubmission();
+                });
+
                 // Modal close on outside click
                 document.getElementById('sellModal').addEventListener('click', (e) => {
                     if (e.target.id === 'sellModal') {
                         this.closeSellModal();
                     }
                 });
+
+                document.getElementById('tokenModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'tokenModal') {
+                        this.closeTokenSetup();
+                    }
+                });
+            }
+
+            handleTokenSubmission() {
+                const token = document.getElementById('githubToken').value.trim();
+                const username = document.getElementById('githubUsername').value.trim();
+                const repo = document.getElementById('githubRepo').value.trim();
+
+                if (!token || !username || !repo) {
+                    this.showNotification('Please fill all required fields', 'error');
+                    return;
+                }
+
+                // Validate token format (basic check)
+                if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+                    this.showNotification('Invalid GitHub token format', 'error');
+                    return;
+                }
+
+                // Update configuration
+                this.githubConfig.token = token;
+                this.githubConfig.owner = username;
+                this.githubConfig.repo = repo;
+
+                // Save to localStorage
+                this.saveConfig();
+
+                // Hide banner and modal
+                document.getElementById('tokenBanner').classList.add('hidden');
+                this.closeTokenSetup();
+
+                this.showNotification('GitHub configuration saved successfully!', 'success');
+                
+                // Reload products to sync with GitHub
+                this.refreshProducts();
             }
 
             setupAnimations() {
@@ -578,9 +745,9 @@
                 this.displayProducts();
                 loadingIndicator.classList.add('hidden');
 
-                // Try to load from GitHub in the background
-                try {
-                    if (this.githubConfig.token !== 'YOUR_GITHUB_TOKEN') {
+                // Try to load from GitHub in the background if token is configured
+                if (this.githubConfig.token && this.githubConfig.token !== 'YOUR_GITHUB_TOKEN') {
+                    try {
                         const githubProducts = await this.loadFromGitHub();
                         if (githubProducts && githubProducts.length > 0) {
                             this.products = githubProducts;
@@ -588,10 +755,36 @@
                             this.displayProducts();
                             this.showNotification('Products synced from GitHub!', 'success');
                         }
+                    } catch (error) {
+                        console.log('GitHub sync failed, using local data:', error);
+                        this.showNotification('Using offline data (GitHub sync unavailable)', 'info');
                     }
+                } else {
+                    // Load from localStorage as fallback
+                    const localProducts = this.loadFromLocalStorage();
+                    if (localProducts && localProducts.length > 0) {
+                        this.products = localProducts;
+                        this.filteredProducts = [...localProducts];
+                        this.displayProducts();
+                    }
+                }
+            }
+
+            loadFromLocalStorage() {
+                try {
+                    const stored = localStorage.getItem('juitOLXProducts');
+                    return stored ? JSON.parse(stored) : null;
                 } catch (error) {
-                    console.log('GitHub sync failed, using local data:', error);
-                    this.showNotification('Using offline data (GitHub sync unavailable)', 'info');
+                    console.error('Error loading from localStorage:', error);
+                    return null;
+                }
+            }
+
+            saveToLocalStorage() {
+                try {
+                    localStorage.setItem('juitOLXProducts', JSON.stringify(this.products));
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
                 }
             }
 
@@ -763,11 +956,16 @@
                         return;
                     }
 
-                    // Upload image first
-                    const imageUrl = await this.uploadImageToGitHub(this.selectedImage);
+                    let imageUrl = null;
+                    
+                    // Try to upload image to GitHub if token is configured
+                    if (this.githubConfig.token && this.githubConfig.token !== 'YOUR_GITHUB_TOKEN') {
+                        imageUrl = await this.uploadImageToGitHub(this.selectedImage);
+                    }
+                    
+                    // Fallback to local URL if GitHub upload fails
                     if (!imageUrl) {
-                        this.showNotification('Failed to upload image', 'error');
-                        return;
+                        imageUrl = await this.convertImageToDataURL(this.selectedImage);
                     }
 
                     // Create product object
@@ -787,19 +985,23 @@
                     this.products.unshift(newProduct);
                     this.filteredProducts = [...this.products];
 
-                    // Save to GitHub
-                    const success = await this.saveProductsToGitHub();
-                    
-                    if (success) {
-                        this.showNotification('Product listed successfully!', 'success');
-                        this.closeSellModal();
-                        this.displayProducts();
+                    // Save to localStorage first
+                    this.saveToLocalStorage();
+
+                    // Try to save to GitHub if configured
+                    if (this.githubConfig.token && this.githubConfig.token !== 'YOUR_GITHUB_TOKEN') {
+                        const success = await this.saveProductsToGitHub();
+                        if (success) {
+                            this.showNotification('Product listed and synced to GitHub!', 'success');
+                        } else {
+                            this.showNotification('Product listed locally (GitHub sync failed)', 'warning');
+                        }
                     } else {
-                        // Remove from local array if GitHub save failed
-                        this.products.shift();
-                        this.filteredProducts = [...this.products];
-                        this.showNotification('Failed to save product. Please try again.', 'error');
+                        this.showNotification('Product listed locally!', 'success');
                     }
+
+                    this.closeSellModal();
+                    this.displayProducts();
 
                 } catch (error) {
                     console.error('Error submitting form:', error);
@@ -809,6 +1011,15 @@
                     submitBtn.disabled = false;
                     submitBtn.textContent = originalText;
                 }
+            }
+
+            async convertImageToDataURL(imageFile) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(imageFile);
+                });
             }
 
             async uploadImageToGitHub(imageFile) {
@@ -934,6 +1145,8 @@
                     notification.classList.add('bg-green-600', 'text-white');
                 } else if (type === 'error') {
                     notification.classList.add('bg-red-600', 'text-white');
+                } else if (type === 'warning') {
+                    notification.classList.add('bg-yellow-600', 'text-white');
                 } else {
                     notification.classList.add('bg-blue-600', 'text-white');
                 }
@@ -977,6 +1190,3 @@
     </script>
 </body>
 </html>
-
-
-
