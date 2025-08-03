@@ -10,12 +10,11 @@ const PORT = process.env.PORT || 3000;
 
 // GitHub configuration
 const GITHUB_CONFIG = {
-    owner: 'Pushkarmehra',
-    repo: 'DEMO-JUIT-OLX-2',
+    owner: 'Pushkarmehra',        // Your GitHub username
+    repo: 'DEMO-JUIT-OLX-2',     // Your repository name
     branch: 'main',
     token: process.env.API_KEY
 };
-
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
