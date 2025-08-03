@@ -396,12 +396,12 @@
     <script>
         class JUITOLXApp {
             constructor() {
+                const token=process.env.TOKEN, 
                 this.products = [];
                 this.filteredProducts = [];
                 this.githubConfig = {
                     owner: 'Pushkarmehra', // ⚠️ CHANGE THIS to your GitHub username
                     repo: 'DEMO-JUIT-OLX-2', // ⚠️ CHANGE THIS to your repository name
-                    token: 'process.env.TOKEN', // ⚠️ CHANGE THIS to your GitHub token
                     branch: 'main'
                 };
                 
@@ -977,5 +977,6 @@
     </script>
 </body>
 </html>
+
 
 
